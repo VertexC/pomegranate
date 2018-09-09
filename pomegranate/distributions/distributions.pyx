@@ -150,7 +150,7 @@ cdef class Distribution(Model):
 
 		if self.frozen:
 			return
-
+		# print("reach distribution fit")
 		self.summarize(items, weights, column_idx)
 		self.from_summaries(inertia)
 
