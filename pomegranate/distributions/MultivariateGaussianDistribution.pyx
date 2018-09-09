@@ -277,7 +277,7 @@ cdef class MultivariateGaussianDistribution(MultivariateDistribution):
 		# 	chol = scipy.linalg.cholesky(self.cov, lower=True)
 		# 	self.inv_cov = scipy.linalg.solve_triangular(chol, numpy.eye(d),
 		# 		lower=True).T
-
+		print("vertexc")
 		self.cov = numpy.eye(d)
 		_, self._log_det = numpy.linalg.slogdet(self.cov)
 		self._inv_cov = <double*> self.inv_cov.data
