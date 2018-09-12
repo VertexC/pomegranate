@@ -141,7 +141,7 @@ cdef class Distribution(Model):
 		else:
 			return logp_array
 
-	def fit(self, items, weights=None, inertia=0.0, column_idx=0):
+	def fit(self, items, weights=None, inertia=0.0, column_idx=0, variance_fix=False):
 		"""
 		Set the parameters of this Distribution to maximize the likelihood of
 		the given sample. Items holds some sort of sequence. If weights is
@@ -152,7 +152,7 @@ cdef class Distribution(Model):
 			return
 		# print("reach distribution fit")
 		self.summarize(items, weights, column_idx)
-		self.from_summaries(inertia)
+		self.from_summaries(inertia, variance_fix)
 
 	def summarize(self, items, weights=None, column_idx=0):
 		"""
@@ -180,7 +180,7 @@ cdef class Distribution(Model):
 		int column_idx, int d) nogil:
 		pass
 
-	def from_summaries(self, inertia=0.0):
+	def from_summaries(self, inertia=0.0, variance_fix=False):
 		"""Fit the distribution to the stored sufficient statistics.
 		Parameters
 		----------
@@ -328,7 +328,6 @@ cdef class Distribution(Model):
 	@classmethod
 	def from_samples(cls, items, weights=None, **kwargs):
 		"""Fit a distribution to some data without pre-specifying it."""
-
 		distribution = cls.blank()
 		distribution.fit(items, weights, **kwargs)
 		return distribution

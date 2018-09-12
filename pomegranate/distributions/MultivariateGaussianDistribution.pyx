@@ -221,7 +221,7 @@ cdef class MultivariateGaussianDistribution(MultivariateDistribution):
 		free(pair_w_sum)
 		free(y)
 
-	def from_summaries(self, inertia=0.0, min_covar=1e-5):
+	def from_summaries(self, inertia=0.0, min_covar=1e-5, variance_fix=False):
 		"""
 		Set the parameters of this Distribution to maximize the likelihood of
 		the given sample. Items holds some sort of sequence. If weights is
@@ -242,43 +242,44 @@ cdef class MultivariateGaussianDistribution(MultivariateDistribution):
 		# If no summaries stored or the summary is frozen, don't do anything.
 		if self.frozen == True or w_sum < 1e-7:
 			return
-
-
-		for i in range(d):
-			mu[i] = self.column_sum[i*d + i] / self.column_w_sum[i]
-			self._mu[i] = self._mu[i] * inertia + mu[i] * (1-inertia)
-
-		# for j in range(d):
-		# 	for k in range(d):
-		# 		x_jk = self.pair_sum[j*d + k]
-		# 		w_jk = self.pair_w_sum[j*d + k]
-
-		# 		if j == k:
-		# 			x_j = self.column_sum[j*d + j]
-		# 			x_k = self.column_sum[k*d + k]
-		# 		else:
-		# 			x_j = self.column_sum[j*d + j] + self.column_sum[j*d + k]
-		# 			x_k = self.column_sum[k*d + k] + self.column_sum[k*d + j]
-
-		# 		cov = (x_jk - x_j*x_k/w_jk) / w_jk if w_jk > 0.0 else 0
-		# 		self._cov[j*d + k] = self._cov[j*d + k] * inertia + cov * (1-inertia)
-
-		# try:
-		# 	chol = scipy.linalg.cholesky(self.cov, lower=True)
-		# 	self.inv_cov = scipy.linalg.solve_triangular(chol, numpy.eye(d),
-		# 		lower=True).T
-		# except:
-		# 	if self.cov.sum() == 0:
-		# 		self.cov += numpy.eye(d) * min_covar
-		# 	else:
-		# 		min_eig = numpy.linalg.eig(self.cov)[0].min()
-		# 		self.cov -= numpy.eye(d) * (min_eig - eps)
-
-		# 	chol = scipy.linalg.cholesky(self.cov, lower=True)
-		# 	self.inv_cov = scipy.linalg.solve_triangular(chol, numpy.eye(d),
-		# 		lower=True).T
 		print("vertexc")
-		self.cov = numpy.eye(d)
+		if not variance_fix:
+			for i in range(d):
+				mu[i] = self.column_sum[i*d + i] / self.column_w_sum[i]
+				self._mu[i] = self._mu[i] * inertia + mu[i] * (1-inertia)
+
+			for j in range(d):
+				for k in range(d):
+					x_jk = self.pair_sum[j*d + k]
+					w_jk = self.pair_w_sum[j*d + k]
+
+					if j == k:
+						x_j = self.column_sum[j*d + j]
+						x_k = self.column_sum[k*d + k]
+					else:
+						x_j = self.column_sum[j*d + j] + self.column_sum[j*d + k]
+						x_k = self.column_sum[k*d + k] + self.column_sum[k*d + j]
+
+					cov = (x_jk - x_j*x_k/w_jk) / w_jk if w_jk > 0.0 else 0
+					self._cov[j*d + k] = self._cov[j*d + k] * inertia + cov * (1-inertia)
+
+			try:
+				chol = scipy.linalg.cholesky(self.cov, lower=True)
+				self.inv_cov = scipy.linalg.solve_triangular(chol, numpy.eye(d),
+					lower=True).T
+			except:
+				if self.cov.sum() == 0:
+					self.cov += numpy.eye(d) * min_covar
+				else:
+					min_eig = numpy.linalg.eig(self.cov)[0].min()
+					self.cov -= numpy.eye(d) * (min_eig - eps)
+
+				chol = scipy.linalg.cholesky(self.cov, lower=True)
+				self.inv_cov = scipy.linalg.solve_triangular(chol, numpy.eye(d),
+					lower=True).T
+		else:
+			print("vertexc fix the variance!")
+			self.cov = numpy.eye(d)
 		_, self._log_det = numpy.linalg.slogdet(self.cov)
 		self._inv_cov = <double*> self.inv_cov.data
 

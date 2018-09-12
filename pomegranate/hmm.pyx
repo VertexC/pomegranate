@@ -3421,7 +3421,7 @@ cdef class HiddenMarkovModel(GraphModel):
         max_iterations=1e8, n_init=1, init='kmeans++', max_kmeans_iterations=1,
         batch_size=None, batches_per_epoch=None, lr_decay=0.0, end_state=False,
         state_names=None, name=None, callbacks=[], return_history=False,
-        verbose=False, n_jobs=1):
+        verbose=False, n_jobs=1, variance_fix=False):
         """Learn the transitions and emissions of a model directly from data.
 
         This method will learn both the transition matrix, emission distributions,
@@ -3584,13 +3584,16 @@ cdef class HiddenMarkovModel(GraphModel):
             The number of threads to use when performing training. This
             leads to exact updates. Default is 1.
 
+        variance_fix: bool, optional
+            Done by Vertexc.
+
         Returns
         -------
         model : HiddenMarkovModel
             The model fit to the data.
         """
 
-
+        print("New version1.0")
         X_concat = numpy.concatenate(X)
 
         if X_concat.ndim == 1:
@@ -3638,10 +3641,11 @@ cdef class HiddenMarkovModel(GraphModel):
             y = clf.predict(X_concat)
 
             if callable(distribution):
+                print("go to callable distribution")
                 if X_concat.shape[1] > 1 and not isinstance(distribution.blank(), MultivariateDistribution):
                     distribution = [distribution for i in range(X_concat.shape[1])]
                 else:
-                    distributions = [distribution.from_samples(X_concat[y == i]) for i in range(n_components)]
+                    distributions = [distribution.from_samples(X_concat[y == i], variance_fix) for i in range(n_components)]
 
             if isinstance(distribution, list):
                 distributions = [IndependentComponentsDistribution.from_samples(X_concat[y == i],
